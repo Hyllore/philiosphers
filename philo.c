@@ -6,7 +6,7 @@
 /*   By: droly <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/05/16 11:45:25 by droly             #+#    #+#             */
-/*   Updated: 2017/05/18 15:31:36 by droly            ###   ########.fr       */
+/*   Updated: 2017/05/18 17:43:41 by droly            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,21 +15,26 @@
 
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+void *fct() {
+	int time;
 
-/*void *fct(void * arg) {
-
+	time = TIMEOUT;
 	while (pthread_mutex_trylock(&g_mutex) != 0)
 		puts("trylock");
 
-//	pthread_mutex_lock(&g_mutex);
+	printf("time %d\n", time);
+	while (time > 0)
+	{
+		sleep(1);
+		time--;
+		printf("time %d\n", time);
+	}
 
-	for (int i = 0; i < 10; i++)
-		puts(arg);
 	pthread_mutex_unlock(&g_mutex);
 
 	return NULL;
 }
-
+/*
 int	main(void)
 {
 	pthread_t th1;
@@ -42,7 +47,7 @@ int	main(void)
 	pthread_join(th2, NULL);
 	return (0);
 }
-
+*/
 t_list	*fill_list(t_list *list)
 {
 	static int i = 1;
@@ -71,20 +76,16 @@ t_list	*fill_list(t_list *list)
 
 void	start_algo(t_list *list)
 {
-//	pthread_t th1;
+	pthread_t th1;
 //	pthread_t th2;
-	int			time;
 
 	list->state = 0;
-	time = TIMEOUT;
-	printf("time %d\n", time);
-	while (time > 0)
+	pthread_create(&th1, NULL, fct, NULL);
+	pthread_detach(th1);
+	while (1)
 	{
-		pthread_create(&th1, NULL, fct);
-//		pthread_detach(th1);
-		sleep(1);
-		time--;
-		printf("time %d\n", time);
+		pthread_join(th1, NULL);
+		printf("hey\n");
 	}
 }
 
