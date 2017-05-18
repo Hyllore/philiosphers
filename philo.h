@@ -6,7 +6,7 @@
 /*   By: droly <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/05/16 11:04:30 by droly             #+#    #+#             */
-/*   Updated: 2017/05/16 17:29:25 by droly            ###   ########.fr       */
+/*   Updated: 2017/05/18 14:41:09 by droly            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,9 @@
 # define REST_T 4
 # define THINK_T 2
 # define TIMEOUT 25
+# define SLEEP 0
+# define EAT 1
+# define THINK 2
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -36,6 +39,9 @@ typedef struct		s_list
 	size_t			health;
 	t_bag			*right;
 	t_bag			*left;
+	int				hright;
+	int				hleft;
+	int				state;
 	struct s_list	*next;
 }					t_list;
 

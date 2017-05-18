@@ -6,7 +6,7 @@
 /*   By: droly <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/05/16 11:45:25 by droly             #+#    #+#             */
-/*   Updated: 2017/05/16 17:59:13 by droly            ###   ########.fr       */
+/*   Updated: 2017/05/18 15:31:36 by droly            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,9 @@
 #include <stdio.h>
 
 
-/*pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void *fct(void * arg) {
+/*void *fct(void * arg) {
 
 	while (pthread_mutex_trylock(&g_mutex) != 0)
 		puts("trylock");
@@ -41,7 +41,7 @@ int	main(void)
 	pthread_join(th1, NULL);
 	pthread_join(th2, NULL);
 	return (0);
-}*/
+}
 
 t_list	*fill_list(t_list *list)
 {
@@ -62,8 +62,30 @@ t_list	*fill_list(t_list *list)
 	list->right->id = b;
 	list->left->isfree = 1;
 	list->right->isfree = 1;
+	list->hleft = 0;
+	list->hright = 0;
+	list->state = SLEEP;
 	i++;
 	return (list);
+}
+
+void	start_algo(t_list *list)
+{
+//	pthread_t th1;
+//	pthread_t th2;
+	int			time;
+
+	list->state = 0;
+	time = TIMEOUT;
+	printf("time %d\n", time);
+	while (time > 0)
+	{
+		pthread_create(&th1, NULL, fct);
+//		pthread_detach(th1);
+		sleep(1);
+		time--;
+		printf("time %d\n", time);
+	}
 }
 
 int main (void)
@@ -92,12 +114,17 @@ int main (void)
 		printf("_________\n");
 		printf("phil n : %d\n", list->phil);
 		printf("health : %lu\n", list->health);
+		printf("hright : %d\n", list->hright);
+		printf("hleft : %d\n", list->hleft);
 		printf("left id : %d\n", list->left->id);
 		printf("left isfree : %d\n", list->left->isfree);
 		printf("right id : %d\n", list->right->id);
 		printf("right isfree : %d\n", list->right->isfree);
+		printf("right state : %d\n", list->state);
 		printf("_________\n");
 		list = list->next;
 	}
+	i = 0;
+	start_algo(list);
 	return (0);
 }
