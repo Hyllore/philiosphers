@@ -6,7 +6,7 @@
 /*   By: droly <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/05/16 11:45:25 by droly             #+#    #+#             */
-/*   Updated: 2017/05/23 17:01:18 by droly            ###   ########.fr       */
+/*   Updated: 2017/05/26 16:33:20 by droly            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,30 +53,44 @@ void *fct2() {
    return (0);
    }
    */
-t_list	*fill_list(t_list *list)
+t_list	*fill_list(t_list *list, t_list *tmp)
 {
 	static int i = 1;
 	static int b = 0;
+	static t_list *tmp2 = NULL;
 
+	if (b == 0)
+		tmp2 = list;
 	list->phil = i;
 	list->health = MAX_LIFE;
 	if ((list->right = malloc(sizeof(t_bag))) == NULL)
 		return (NULL);
-	if ((list->left = malloc(sizeof(t_bag))) == NULL)
-		return (NULL);
-	if (b == 0)
-		list->left->id = 7;
-	else
+	if (b != 0)
+	{
+		if ((list->left = malloc(sizeof(t_bag))) == NULL)
+			return (NULL);
+	}
+	if (b == 6)
+		tmp->left = list->right;
+	else if (b != 0)
+		list->left = tmp2->right;
+	if (b == 6)
+		tmp2->left->id = 7;
+	else if (b != 0)
 		list->left->id = b;
 	b++;
 	list->right->id = b;
-	list->left->isfree = 1;
+	if (b == 6)
+	{
+		list->left->isfree = 1;
+	}
 	list->right->isfree = 1;
 	list->hleft = 0;
 	list->hright = 0;
 	list->timeleft = 0;
 	list->state = 0;
 	i++;
+	tmp2 = list;
 	return (list);
 }
 
@@ -184,7 +198,11 @@ void	start_algo(t_list *list)
 	//	time_t t = time(0);
 	//	time_t t2 = t;
 	int tmp = 0;
+	t_list *tmp2;
+	int i;
 
+	i = 0;
+	tmp2 = list;
 	//	list->state = 0;
 	pthread_create(th, NULL, fct, NULL);
 	pthread_detach(th[0]);
@@ -209,19 +227,31 @@ void	start_algo(t_list *list)
 		tmp++;
 		printf("time : %d\n", tmp);
 		list = loose_life(list);
-		if (list->timeleft != 0)
-			list->timeleft--;
-		if ((list->state == 0 || list->state == 1) && list->timeleft == 0)
+		tmp2 = list;
+		while (i < 7)
 		{
-			if (list->right->isfree == 1 && list->left->isfree == 1)
-				list = eat(list);
-			else if (list->right->isfree == 1 || list->left->isfree == 1)
-				list = think(list);
-			else
-				list->state = 3;
+			if (list->timeleft != 0)
+				list->timeleft--;
+			if ((list->state == 0 || list->state == 1) && list->timeleft == 0)
+			{
+				printf("handr : %d, handl : %d\n", list->right->isfree, list->left->isfree);
+				if (list->right->isfree == 1 && list->left->isfree == 1)
+				{
+					printf("hey\n");
+					list = eat(list);
+					printf("after eat handr : %d, handl : %d\n", list->next->right->isfree, list->next->left->isfree);
+				}
+				else if (list->right->isfree == 1 || list->left->isfree == 1)
+					list = think(list);
+				else
+					list->state = 3;
+			}
+			else if ((list->state == 1 || list->state == 3) && list->timeleft == 0)
+				list = sleepi(list);
+			i++;
+			list = list->next;
 		}
-		if ((list->state == 1 || list->state == 3) && list->timeleft == 0)
-			list = sleepi(list);
+		list = tmp2;
 		display_state(list);
 	}
 	printf("Now, it is time... To DAAAAAAAANCE ! ! !");
@@ -238,13 +268,13 @@ int main (void)
 	if ((list = malloc(sizeof(t_list))) == NULL)
 		return (0);
 	tmp = list;
-	list = fill_list(list);
+	list = fill_list(list, tmp);
 	while (i < 7)
 	{
 		if ((list->next = malloc(sizeof(t_list))) == NULL)
 			return (0);
 		list = list->next;
-		list = fill_list(list);
+		list = fill_list(list, tmp);
 		i++;
 	}
 	list = tmp;
