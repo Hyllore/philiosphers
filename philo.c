@@ -6,7 +6,7 @@
 /*   By: droly <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/05/16 11:45:25 by droly             #+#    #+#             */
-/*   Updated: 2017/05/26 16:33:20 by droly            ###   ########.fr       */
+/*   Updated: 2017/05/29 17:34:49 by droly            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,13 +65,12 @@ t_list	*fill_list(t_list *list, t_list *tmp)
 	list->health = MAX_LIFE;
 	if ((list->right = malloc(sizeof(t_bag))) == NULL)
 		return (NULL);
-	if (b != 0)
-	{
-		if ((list->left = malloc(sizeof(t_bag))) == NULL)
-			return (NULL);
-	}
 	if (b == 6)
+	{
+		list->left = tmp2->right;
 		tmp->left = list->right;
+		list->next = NULL;
+	}
 	else if (b != 0)
 		list->left = tmp2->right;
 	if (b == 6)
@@ -88,7 +87,7 @@ t_list	*fill_list(t_list *list, t_list *tmp)
 	list->hleft = 0;
 	list->hright = 0;
 	list->timeleft = 0;
-	list->state = 0;
+	list->state = SLEEP;
 	i++;
 	tmp2 = list;
 	return (list);
@@ -110,7 +109,8 @@ t_list	*loose_life(t_list *list)
 	i = 0;
 	while (i < 7)
 	{
-		list->health--;
+		if (list->state != EAT)
+			list->health--;
 		if (list->health == 0)
 			quit();
 		list = list->next;
@@ -119,8 +119,6 @@ t_list	*loose_life(t_list *list)
 	list = tmp;
 	return (list);
 }
-
-
 
 void	display_state(t_list *list)
 {
@@ -132,13 +130,13 @@ void	display_state(t_list *list)
 	while (i < 7)
 	{
 		printf("Le philosophe %d ", list->phil);
-		if (list->state == 0)
+		if (list->state == SLEEP)
 			printf("se repose, ");
-		if (list->state == 1)
+		if (list->state == EAT)
 			printf("mange, ");
-		if (list->state == 2)
+		if (list->state == THINK)
 			printf("pense, ");
-		if (list->state == 3)
+		if (list->state == WAIT)
 			printf("attend, ");
 		printf("vie restante : %lu\n", list->health);
 		i++;
@@ -150,18 +148,18 @@ void	display_state(t_list *list)
 
 t_list	*think(t_list *list)
 {
-	if (list->right->isfree == 1)
-	{
-		list->right->isfree = 0;
-		list->hright = 1;
-	}
+//	if (list->hright == 1)
+//	{
+//		list->hright = 0;
+//		list->right->isfree = 1;
+//	}
 	if (list->left->isfree == 1)
 	{
-		list->left->isfree = 0;
-		list->hleft = 1;
+		list->hleft = 0;
+		list->left->isfree = 1;
 	}
-	list->state = 2;
-	list->timeleft = THINK;
+	list->state = THINK;
+	list->timeleft = THINK_T;
 	return (list);
 }
 
@@ -169,10 +167,12 @@ t_list	*eat(t_list *list)
 {
 	list->right->isfree = 0;
 	list->left->isfree = 0;
+	if (list->next->state == THINK)
+		list->next->hleft = 0;
 	list->hleft = 1;
 	list->hright = 1;
-	list->state = 1;
-	list->timeleft = EAT;
+	list->state = EAT;
+	list->timeleft = EAT_T;
 	list->health = MAX_LIFE;
 	return (list);
 }
@@ -180,12 +180,12 @@ t_list	*eat(t_list *list)
 
 t_list	*sleepi(t_list *list)
 {
-	list->state = 0;
+	list->state = SLEEP;
 	list->right->isfree = 1;
 	list->left->isfree = 1;
 	list->hleft = 0;
 	list->hright = 0;
-	list->timeleft = SLEEP;
+	list->timeleft = REST_T;
 
 	return (list);
 }
@@ -203,7 +203,7 @@ void	start_algo(t_list *list)
 
 	i = 0;
 	tmp2 = list;
-	//	list->state = 0;
+	//	list->state = SLEEP;
 	pthread_create(th, NULL, fct, NULL);
 	pthread_detach(th[0]);
 	//	pthread_create(&th2, NULL, fct2, NULL);
@@ -232,10 +232,10 @@ void	start_algo(t_list *list)
 		{
 			if (list->timeleft != 0)
 				list->timeleft--;
-			if ((list->state == 0 || list->state == 1) && list->timeleft == 0)
+			if ((list->state == SLEEP || list->state == WAIT || list->state == THINK) && list->timeleft == 0)
 			{
 				printf("handr : %d, handl : %d\n", list->right->isfree, list->left->isfree);
-				if (list->right->isfree == 1 && list->left->isfree == 1)
+				if ((list->right->isfree == 1 && list->left->isfree == 1) || (list->right->isfree == 0 && list->left->isfree == 1 && list->next->state == THINK))
 				{
 					printf("hey\n");
 					list = eat(list);
@@ -244,13 +244,20 @@ void	start_algo(t_list *list)
 				else if (list->right->isfree == 1 || list->left->isfree == 1)
 					list = think(list);
 				else
-					list->state = 3;
+				{
+					list->hright = 0;
+					list->right->isfree = 1;
+					list->hleft = 0;
+					list->left->isfree = 1;
+					list->state = WAIT;
+				}
 			}
-			else if ((list->state == 1 || list->state == 3) && list->timeleft == 0)
+			else if (list->state == EAT && list->timeleft == 0)
 				list = sleepi(list);
 			i++;
 			list = list->next;
 		}
+		i = 0;
 		list = tmp2;
 		display_state(list);
 	}
@@ -288,8 +295,10 @@ int main (void)
 		printf("hleft : %d\n", list->hleft);
 		printf("left id : %d\n", list->left->id);
 		printf("left isfree : %d\n", list->left->isfree);
+		printf("left add : %p\n", list->left);
 		printf("right id : %d\n", list->right->id);
 		printf("right isfree : %d\n", list->right->isfree);
+		printf("right add : %p\n", list->right);
 		printf("right state : %d\n", list->state);
 		printf("_________\n");
 		list = list->next;
