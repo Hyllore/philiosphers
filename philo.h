@@ -6,7 +6,7 @@
 /*   By: droly <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/05/16 11:04:30 by droly             #+#    #+#             */
-/*   Updated: 2017/05/29 17:35:30 by droly            ###   ########.fr       */
+/*   Updated: 2017/06/01 17:24:50 by droly            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 # define EAT_T 2
 # define REST_T 2
 # define THINK_T 3
-# define TIMEOUT 100
+# define TIMEOUT 10
 # define SLEEP 0
 # define EAT 1
 # define THINK 2
@@ -36,7 +36,8 @@ typedef struct		s_bag
 
 typedef struct		s_list
 {
-	int				phil;
+	int				phil2;
+	pthread_t		phil;
 	size_t			health;
 	t_bag			*right;
 	t_bag			*left;

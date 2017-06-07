@@ -6,15 +6,19 @@
 /*   By: droly <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/05/16 11:45:25 by droly             #+#    #+#             */
-/*   Updated: 2017/05/29 17:34:49 by droly            ###   ########.fr       */
+/*   Updated: 2017/06/02 17:45:36 by droly            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 #include <stdio.h>
 
-
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+//int compt = 7;
+
+int tmp = 0;
+
 void *fct() {
 	while (pthread_mutex_trylock(&g_mutex) != 0)
 		puts("trylock");
@@ -53,6 +57,253 @@ void *fct2() {
    return (0);
    }
    */
+
+void	quit()
+{
+	printf("finished one died");
+	exit(0);
+	//liberer ressources'
+}
+
+t_list	*loose_life(t_list *list)
+{
+	int i;
+	t_list *tmp;
+
+	tmp = list;
+	i = 0;
+	while (i < 7)
+	{
+		if (list->state != EAT)
+			list->health--;
+		if (list->health == 0)
+		{
+			list = tmp;
+			i = 0;
+			while (i < 7)
+			{
+				list->timeleft = 1;
+				i++;
+				list = list->next;
+			}
+			quit();
+		}
+		list = list->next;
+		i++;
+	}
+	list = tmp;
+	return (list);
+}
+
+void	display_state(t_list *list)
+{
+	t_list *tmp;
+	int i;
+
+	i = 0;
+	tmp = list;
+	while (i < 7)
+	{
+		printf("Le philosophe %d ", list->phil2);
+		if (list->state == SLEEP)
+			printf("se repose, ");
+		if (list->state == EAT)
+			printf("mange, ");
+		if (list->state == THINK)
+			printf("pense, ");
+		if (list->state == WAIT)
+			printf("attend, ");
+		printf("vie restante : %lu\n", list->health);
+		i++;
+		list = list->next;
+	}
+	list = tmp;
+}
+
+
+t_list	*think(t_list *list)
+{
+	//	if (list->hright == 1)
+	//	{
+	//		list->hright = 0;
+	//		list->right->isfree = 1;
+	//	}
+	if (list->left->isfree == 1)
+	{
+		list->hleft = 0;
+		list->left->isfree = 1;
+	}
+	list->state = THINK;
+	pthread_mutex_unlock(&g_mutex);
+	usleep(THINK_T * 1000000);
+//	list->timeleft = THINK_T;
+	return (list);
+}
+
+t_list	*eat(t_list *list)
+{
+	list->right->isfree = 0;
+	list->left->isfree = 0;
+	if (list->next->state == THINK)
+		list->next->hleft = 0;
+	list->hleft = 1;
+	list->hright = 1;
+	list->state = EAT;
+	pthread_mutex_unlock(&g_mutex);
+//	printf("time1\n");
+	usleep(EAT_T * 1000000);
+//	printf("time2\n");
+//	list->timeleft = EAT_T;
+	list->health = MAX_LIFE;
+	pthread_mutex_lock(&g_mutex);
+	list->right->isfree = 1;
+	list->left->isfree = 1;
+	list->hleft = 0;
+	list->hright = 0;
+	pthread_mutex_unlock(&g_mutex);
+	return (list);
+}
+
+
+t_list	*sleepi(t_list *list)
+{
+	list->state = SLEEP;
+	list->right->isfree = 1;
+	list->left->isfree = 1;
+	list->hleft = 0;
+	list->hright = 0;
+	pthread_mutex_unlock(&g_mutex);
+	usleep(REST_T * 1000000);
+//	list->timeleft = REST_T;
+
+	return (list);
+}
+
+void	*timer(void *list2)
+{
+	t_list *list;
+	int i;
+
+	i = 0;
+	list = (t_list*)list2;
+	while (tmp < TIMEOUT)
+	{
+		usleep(1000000);
+		list = loose_life(list);
+		tmp++;
+		printf("time : %d\n", tmp);
+		display_state(list);
+	}
+	i = 0;
+	while (i < 7)
+	{
+		list->timeleft = 1;
+		i++;
+		list = list->next;
+	}
+	list->timeleft = 1;
+	printf("Now, it is time... To DAAAAAAAANCE ! ! !");
+	return (0);
+}
+
+void	*start_algo(void *list2)
+{
+	t_list *list;
+
+	list = (t_list*)list2;
+//		printf("yo\n");
+	//	pthread_t th[7];
+	//	pthread_t th2;
+	//	time_t t = time(0);
+	//	time_t t2 = t;
+	//	int tmp = 0;
+	//	t_list *tmp2;
+	//	int i;
+
+	//	i = 0;
+	//	tmp2 = list;
+	//	//	list->state = SLEEP;
+	//	pthread_create(th, NULL, fct, NULL);
+	//	pthread_detach(th[0]);
+	//	pthread_create(&th2, NULL, fct2, NULL);
+	//	pthread_detach(th2);
+	//	while ((int)(t2 - t) < TIMEOUT)
+	//	{
+	//		t2 = time(0);
+	//		if (tmp != (int)(t2 - t))
+	//		{
+	//			tmp = (int)(t2 - t);
+	//			printf("time : %d\n", (int)(t2 - t));
+	//		}
+	//		printf("t - t2 : %d > %d ?\n", (int)(t2 - t), TIMEOUT);
+	//		pthread_join(th1, NULL);
+	//		pthread_join(th2, NULL);
+	//		printf("hey\n");
+	//	}
+	while (1)
+	{
+//		usleep(1000000);
+		//		tmp++;
+//		list = loose_life(list);
+//		tmp2 = list;
+		//		while (i < 7)
+		//		{
+		pthread_mutex_lock(&g_mutex);
+//		if (list->timeleft != 0)
+//			list->timeleft--;
+		if (list->state == SLEEP || list->state == WAIT || list->state == THINK)
+		{
+//			printf("handr : %d, handl : %d\n", list->right->isfree, list->left->isfree);
+			if ((list->right->isfree == 1 && list->left->isfree == 1) || (list->right->isfree == 0 && list->left->isfree == 1 && list->next->state == THINK))
+			{
+//				printf("eat\n");
+				list = eat(list);
+//				printf("after eat handr : %d, handl : %d\n", list->next->right->isfree, list->next->left->isfree);
+			}
+			else if (list->right->isfree == 1 || list->left->isfree == 1)
+			{
+//				printf("think\n");
+				list = think(list);
+			}
+			else
+			{
+//				printf("wait\n");
+				list->hright = 0;
+				list->right->isfree = 1;
+				list->hleft = 0;
+				list->left->isfree = 1;
+				list->state = WAIT;
+				pthread_mutex_unlock(&g_mutex);
+			}
+		}
+		else if (list->state == EAT)
+		{
+//			printf("sleep\n");
+			list = sleepi(list);
+		}
+		if (list->timeleft == 1)
+		{
+			pthread_mutex_unlock(&g_mutex);
+			break ;
+		}
+		//			i++;
+		//			list = list->next;
+		//		}
+		//		i = 0;
+		//		list = tmp2;
+//		compt++;
+//		while (compt < 7)
+//			usleep(100);
+//		if (compt >= 7)
+//		{
+//			tmp++;
+//			compt = 0;
+//		}
+	}
+	return (0);
+}
+
+
 t_list	*fill_list(t_list *list, t_list *tmp)
 {
 	static int i = 1;
@@ -61,7 +312,7 @@ t_list	*fill_list(t_list *list, t_list *tmp)
 
 	if (b == 0)
 		tmp2 = list;
-	list->phil = i;
+	list->phil2 = i;
 	list->health = MAX_LIFE;
 	if ((list->right = malloc(sizeof(t_bag))) == NULL)
 		return (NULL);
@@ -93,183 +344,12 @@ t_list	*fill_list(t_list *list, t_list *tmp)
 	return (list);
 }
 
-void	quit()
-{
-	printf("finished one died");
-	exit(0);
-	//liberer ressources'
-}
-
-t_list	*loose_life(t_list *list)
-{
-	int i;
-	t_list *tmp;
-
-	tmp = list;
-	i = 0;
-	while (i < 7)
-	{
-		if (list->state != EAT)
-			list->health--;
-		if (list->health == 0)
-			quit();
-		list = list->next;
-		i++;
-	}
-	list = tmp;
-	return (list);
-}
-
-void	display_state(t_list *list)
-{
-	t_list *tmp;
-	int i;
-
-	i = 0;
-	tmp = list;
-	while (i < 7)
-	{
-		printf("Le philosophe %d ", list->phil);
-		if (list->state == SLEEP)
-			printf("se repose, ");
-		if (list->state == EAT)
-			printf("mange, ");
-		if (list->state == THINK)
-			printf("pense, ");
-		if (list->state == WAIT)
-			printf("attend, ");
-		printf("vie restante : %lu\n", list->health);
-		i++;
-		list = list->next;
-	}
-	list = tmp;
-}
-
-
-t_list	*think(t_list *list)
-{
-//	if (list->hright == 1)
-//	{
-//		list->hright = 0;
-//		list->right->isfree = 1;
-//	}
-	if (list->left->isfree == 1)
-	{
-		list->hleft = 0;
-		list->left->isfree = 1;
-	}
-	list->state = THINK;
-	list->timeleft = THINK_T;
-	return (list);
-}
-
-t_list	*eat(t_list *list)
-{
-	list->right->isfree = 0;
-	list->left->isfree = 0;
-	if (list->next->state == THINK)
-		list->next->hleft = 0;
-	list->hleft = 1;
-	list->hright = 1;
-	list->state = EAT;
-	list->timeleft = EAT_T;
-	list->health = MAX_LIFE;
-	return (list);
-}
-
-
-t_list	*sleepi(t_list *list)
-{
-	list->state = SLEEP;
-	list->right->isfree = 1;
-	list->left->isfree = 1;
-	list->hleft = 0;
-	list->hright = 0;
-	list->timeleft = REST_T;
-
-	return (list);
-}
-
-
-void	start_algo(t_list *list)
-{
-	pthread_t th[7];
-	//	pthread_t th2;
-	//	time_t t = time(0);
-	//	time_t t2 = t;
-	int tmp = 0;
-	t_list *tmp2;
-	int i;
-
-	i = 0;
-	tmp2 = list;
-	//	list->state = SLEEP;
-	pthread_create(th, NULL, fct, NULL);
-	pthread_detach(th[0]);
-	//	pthread_create(&th2, NULL, fct2, NULL);
-	//	pthread_detach(th2);
-	//	while ((int)(t2 - t) < TIMEOUT)
-	//	{
-	//		t2 = time(0);
-	//		if (tmp != (int)(t2 - t))
-	//		{
-	//			tmp = (int)(t2 - t);
-	//			printf("time : %d\n", (int)(t2 - t));
-	//		}
-	//		printf("t - t2 : %d > %d ?\n", (int)(t2 - t), TIMEOUT);
-	//		pthread_join(th1, NULL);
-	//		pthread_join(th2, NULL);
-	//		printf("hey\n");
-	//	}
-	while (tmp < TIMEOUT)
-	{
-		sleep(1);
-		tmp++;
-		printf("time : %d\n", tmp);
-		list = loose_life(list);
-		tmp2 = list;
-		while (i < 7)
-		{
-			if (list->timeleft != 0)
-				list->timeleft--;
-			if ((list->state == SLEEP || list->state == WAIT || list->state == THINK) && list->timeleft == 0)
-			{
-				printf("handr : %d, handl : %d\n", list->right->isfree, list->left->isfree);
-				if ((list->right->isfree == 1 && list->left->isfree == 1) || (list->right->isfree == 0 && list->left->isfree == 1 && list->next->state == THINK))
-				{
-					printf("hey\n");
-					list = eat(list);
-					printf("after eat handr : %d, handl : %d\n", list->next->right->isfree, list->next->left->isfree);
-				}
-				else if (list->right->isfree == 1 || list->left->isfree == 1)
-					list = think(list);
-				else
-				{
-					list->hright = 0;
-					list->right->isfree = 1;
-					list->hleft = 0;
-					list->left->isfree = 1;
-					list->state = WAIT;
-				}
-			}
-			else if (list->state == EAT && list->timeleft == 0)
-				list = sleepi(list);
-			i++;
-			list = list->next;
-		}
-		i = 0;
-		list = tmp2;
-		display_state(list);
-	}
-	printf("Now, it is time... To DAAAAAAAANCE ! ! !");
-}
-
-
 int main (void)
 {
 	t_list	*list;
 	t_list	*tmp;
 	int		i;
+	pthread_t	time;
 
 	i = 0;
 	if ((list = malloc(sizeof(t_list))) == NULL)
@@ -285,11 +365,11 @@ int main (void)
 		i++;
 	}
 	list = tmp;
-		i = 0;
-		while (i++ < 7)
-		{
+	i = 0;
+	while (i++ < 7)
+	{
 		printf("_________\n");
-		printf("phil n : %d\n", list->phil);
+		//		printf("phil n : %d\n", list->phil);
 		printf("health : %lu\n", list->health);
 		printf("hright : %d\n", list->hright);
 		printf("hleft : %d\n", list->hleft);
@@ -302,9 +382,25 @@ int main (void)
 		printf("right state : %d\n", list->state);
 		printf("_________\n");
 		list = list->next;
-		}
-		list = tmp;
+	}
+	list = tmp;
 	i = 0;
-	start_algo(list);
+	pthread_create(&time, NULL, timer, list);
+	while (i < 7)
+	{
+		pthread_create(&list->phil, NULL, start_algo, list);
+		list = list->next;
+		i++;
+	}
+	list = tmp;
+	i = 0;
+	pthread_join(time, NULL);
+	while (i < 7)
+	{
+		pthread_join(list->phil, NULL);
+		list = list->next;
+		i++;
+	}
+//	start_algo(list);
 	return (0);
 }
